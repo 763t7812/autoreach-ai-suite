@@ -90,6 +90,13 @@ interface EmailsResponse {
   has_prev: boolean;
 }
 
+interface ChartData {
+  date: string;
+  full_date: string;
+  sent: number;
+  replies: number;
+}
+
 // Mock data for demo
 const mockStats: DashboardStats = {
   total_sent: 1234,
@@ -171,19 +178,19 @@ const mockEmails: Email[] = [
   },
 ];
 
-const mockChartData = [
-  { date: "Jan 1", sent: 45, replies: 12 },
-  { date: "Jan 2", sent: 52, replies: 18 },
-  { date: "Jan 3", sent: 38, replies: 14 },
-  { date: "Jan 4", sent: 65, replies: 22 },
-  { date: "Jan 5", sent: 72, replies: 28 },
-  { date: "Jan 6", sent: 48, replies: 15 },
-  { date: "Jan 7", sent: 85, replies: 32 },
-  { date: "Jan 8", sent: 67, replies: 24 },
-  { date: "Jan 9", sent: 92, replies: 38 },
-  { date: "Jan 10", sent: 78, replies: 29 },
-  { date: "Jan 11", sent: 56, replies: 19 },
-  { date: "Jan 12", sent: 88, replies: 35 },
+const mockChartData: ChartData[] = [
+  { date: "Jan 1", full_date: "2026-01-01", sent: 45, replies: 12 },
+  { date: "Jan 2", full_date: "2026-01-02", sent: 52, replies: 18 },
+  { date: "Jan 3", full_date: "2026-01-03", sent: 38, replies: 14 },
+  { date: "Jan 4", full_date: "2026-01-04", sent: 65, replies: 22 },
+  { date: "Jan 5", full_date: "2026-01-05", sent: 72, replies: 28 },
+  { date: "Jan 6", full_date: "2026-01-06", sent: 48, replies: 15 },
+  { date: "Jan 7", full_date: "2026-01-07", sent: 85, replies: 32 },
+  { date: "Jan 8", full_date: "2026-01-08", sent: 67, replies: 24 },
+  { date: "Jan 9", full_date: "2026-01-09", sent: 92, replies: 38 },
+  { date: "Jan 10", full_date: "2026-01-10", sent: 78, replies: 29 },
+  { date: "Jan 11", full_date: "2026-01-11", sent: 56, replies: 19 },
+  { date: "Jan 12", full_date: "2026-01-12", sent: 88, replies: 35 },
 ];
 
 export default function Dashboard() {
@@ -220,6 +227,19 @@ export default function Dashboard() {
     },
   });
 
+  const { data: chartData, isLoading: chartLoading } = useQuery({
+    queryKey: ["dashboard-chart", selectedProvider],
+    queryFn: async () => {
+      try {
+        let url = "/api/dashboard/chart-data?days=30";
+        if (selectedProvider) url += `&provider=${selectedProvider}`;
+        return await api.get<ChartData[]>(url);
+      } catch {
+        return mockChartData;
+      }
+    },
+  });
+
   const handleCheckReplies = async () => {
     setIsCheckingReplies(true);
     try {
@@ -247,6 +267,7 @@ export default function Dashboard() {
   });
 
   const displayStats = stats || mockStats;
+  const displayChartData = chartData || mockChartData;
 
   return (
     <DashboardLayout>
@@ -381,7 +402,7 @@ export default function Dashboard() {
         </div>
 
         {/* Activity Chart */}
-        {statsLoading ? (
+        {chartLoading ? (
           <SkeletonChart />
         ) : (
           <div className="rounded-xl border bg-card p-6 shadow-card">
@@ -397,7 +418,7 @@ export default function Dashboard() {
 
               <TabsContent value="sent" className="h-[300px]">
                 <ResponsiveContainer width="100%" height="100%">
-                  <AreaChart data={mockChartData}>
+                  <AreaChart data={displayChartData}>
                     <defs>
                       <linearGradient id="sentGradient" x1="0" y1="0" x2="0" y2="1">
                         <stop offset="5%" stopColor="hsl(164 70% 18%)" stopOpacity={0.3} />
@@ -427,7 +448,7 @@ export default function Dashboard() {
 
               <TabsContent value="replies" className="h-[300px]">
                 <ResponsiveContainer width="100%" height="100%">
-                  <AreaChart data={mockChartData}>
+                  <AreaChart data={displayChartData}>
                     <defs>
                       <linearGradient id="repliesGradient" x1="0" y1="0" x2="0" y2="1">
                         <stop offset="5%" stopColor="hsl(199 89% 48%)" stopOpacity={0.3} />
@@ -457,7 +478,7 @@ export default function Dashboard() {
 
               <TabsContent value="comparison" className="h-[300px]">
                 <ResponsiveContainer width="100%" height="100%">
-                  <LineChart data={mockChartData}>
+                  <LineChart data={displayChartData}>
                     <CartesianGrid strokeDasharray="3 3" className="stroke-border" />
                     <XAxis dataKey="date" className="text-xs" />
                     <YAxis className="text-xs" />
