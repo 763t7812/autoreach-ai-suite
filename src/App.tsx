@@ -10,6 +10,7 @@ import BatchesList from "./pages/BatchesList";
 import SheetsImport from "./pages/SheetsImport";
 import CsvUpload from "./pages/CsvUpload";
 import SingleAnalysis from "./pages/SingleAnalysis";
+import Admin from "./pages/Admin";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient({
@@ -35,6 +36,7 @@ function App() {
             <Route path="/batches" element={<BatchesList />} />
             <Route path="/batches/sheets" element={<SheetsImport />} />
             <Route path="/batches/upload" element={<CsvUpload />} />
+            <Route path="/admin" element={<Admin />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
         </BrowserRouter>
