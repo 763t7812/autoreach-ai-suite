@@ -589,7 +589,7 @@ export default function Dashboard() {
                         asChild
                         className="opacity-0 group-hover:opacity-100"
                       >
-                        <Link to={`/conversation/${email.email_id}`}>
+                        <Link to={`/conversation/${email.email_id}?provider=${email.provider}`}>
                           View
                           <ExternalLink className="ml-1 h-3 w-3" />
                         </Link>

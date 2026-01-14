@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { motion } from "framer-motion";
 import { useQuery, useMutation } from "@tanstack/react-query";
-import { useParams, useNavigate } from "react-router-dom";
+import { useParams, useNavigate, useSearchParams } from "react-router-dom";
 import {
   ArrowLeft,
   Send,
@@ -24,21 +24,26 @@ import { toast } from "sonner";
 import { format } from "date-fns";
 
 interface Message {
-  direction: "sent" | "received";
+  type: "sent" | "received";
   from: string;
   to: string;
   subject: string;
   body: string;
   timestamp: string;
+  provider?: string;
 }
 
-interface ConversationData {
-  email_id: string;
+interface LeadInfo {
   recipient_email: string;
   recipient_name: string;
   recipient_company: string;
-  provider: "gmail" | "outlook";
+  website_url?: string;
+}
+
+interface ConversationData {
+  lead: LeadInfo;
   conversation: Message[];
+  total_messages: number;
 }
 
 interface ReplyResponse {
@@ -50,14 +55,14 @@ interface ReplyResponse {
 
 // Mock data for demo
 const mockConversation: ConversationData = {
-  email_id: "abc-123",
-  recipient_email: "john@acme.com",
-  recipient_name: "John Doe",
-  recipient_company: "Acme Corp",
-  provider: "gmail",
+  lead: {
+    recipient_email: "john@acme.com",
+    recipient_name: "John Doe",
+    recipient_company: "Acme Corp",
+  },
   conversation: [
     {
-      direction: "sent",
+      type: "sent",
       from: "me@company.com",
       to: "john@acme.com",
       subject: "Boost Your Sales Process with AutoReach AI",
@@ -75,7 +80,7 @@ TechCorp`,
       timestamp: "2026-01-12T10:30:00Z",
     },
     {
-      direction: "received",
+      type: "received",
       from: "john@acme.com",
       to: "me@company.com",
       subject: "Re: Boost Your Sales Process with AutoReach AI",
@@ -92,7 +97,7 @@ John`,
       timestamp: "2026-01-12T14:20:00Z",
     },
     {
-      direction: "sent",
+      type: "sent",
       from: "me@company.com",
       to: "john@acme.com",
       subject: "Re: Boost Your Sales Process with AutoReach AI",
@@ -109,7 +114,7 @@ Alice`,
       timestamp: "2026-01-12T16:45:00Z",
     },
     {
-      direction: "received",
+      type: "received",
       from: "john@acme.com",
       to: "me@company.com",
       subject: "Re: Boost Your Sales Process with AutoReach AI",
@@ -123,35 +128,43 @@ John`,
       timestamp: "2026-01-13T09:15:00Z",
     },
   ],
+  total_messages: 4,
 };
 
 export default function Conversation() {
   const { emailId } = useParams<{ emailId: string }>();
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const [replyInstructions, setReplyInstructions] = useState("");
   const [senderName, setSenderName] = useState("Alice Smith");
   const [senderCompany, setSenderCompany] = useState("TechCorp");
   const [recipientFirstName, setRecipientFirstName] = useState("");
 
-  // Determine provider from URL or default to gmail
-  const provider = window.location.pathname.includes("outlook") ? "outlook" : "gmail";
+  // Get provider from URL query parameter or default to gmail
+  const provider = (searchParams.get("provider") as "gmail" | "outlook") || "gmail";
 
   // Fetch conversation thread
-  const { data: conversation, isLoading } = useQuery({
+  const { data: conversation, isLoading, error } = useQuery({
     queryKey: ["conversation", emailId, provider],
     queryFn: async () => {
       try {
-        const endpoint = provider === "outlook" 
+        const endpoint = provider === "outlook"
           ? `/api/conversation/outlook/thread/${emailId}`
           : `/api/conversation/gmail/thread/${emailId}`;
+        console.log(`🔍 Fetching conversation for emailId: ${emailId}, provider: ${provider}`);
+        console.log(`📡 API endpoint: ${endpoint}`);
         const data = await api.get<ConversationData>(endpoint);
-        setRecipientFirstName(data.recipient_name.split(" ")[0]);
+        console.log("✅ Conversation data received:", data);
+        setRecipientFirstName(data.lead.recipient_name.split(" ")[0]);
         return data;
-      } catch {
-        setRecipientFirstName(mockConversation.recipient_name.split(" ")[0]);
+      } catch (error) {
+        console.error("❌ Failed to fetch conversation:", error);
+        console.log("⚠️ Using mock conversation data");
+        setRecipientFirstName(mockConversation.lead.recipient_name.split(" ")[0]);
         return mockConversation;
       }
     },
+    enabled: !!emailId, // Only run query if emailId exists
   });
 
   // Send reply mutation
@@ -204,10 +217,10 @@ export default function Conversation() {
           <div className="flex-1">
             <div className="flex items-center gap-3">
               <h1 className="text-xl font-bold">Conversation Thread</h1>
-              <ProviderBadge provider={displayConversation.provider} />
+              <ProviderBadge provider={provider as "gmail" | "outlook"} />
             </div>
             <p className="text-sm text-muted-foreground">
-              with {displayConversation.recipient_name} from {displayConversation.recipient_company}
+              with {displayConversation.lead.recipient_name} from {displayConversation.lead.recipient_company}
             </p>
           </div>
         </div>
@@ -221,15 +234,15 @@ export default function Conversation() {
           <div className="flex flex-wrap items-center gap-4">
             <div className="flex items-center gap-2">
               <User className="h-4 w-4 text-muted-foreground" />
-              <span className="font-medium">{displayConversation.recipient_name}</span>
+              <span className="font-medium">{displayConversation.lead.recipient_name}</span>
             </div>
             <div className="flex items-center gap-2">
               <Mail className="h-4 w-4 text-muted-foreground" />
-              <span className="text-muted-foreground">{displayConversation.recipient_email}</span>
+              <span className="text-muted-foreground">{displayConversation.lead.recipient_email}</span>
             </div>
             <div className="flex items-center gap-2">
               <Building2 className="h-4 w-4 text-muted-foreground" />
-              <span className="text-muted-foreground">{displayConversation.recipient_company}</span>
+              <span className="text-muted-foreground">{displayConversation.lead.recipient_company}</span>
             </div>
           </div>
         </motion.div>
@@ -256,7 +269,7 @@ export default function Conversation() {
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: index * 0.1 }}
                 className={`rounded-xl border bg-card p-6 shadow-card ${
-                  message.direction === "sent"
+                  message.type === "sent"
                     ? "border-l-4 border-l-primary"
                     : "border-l-4 border-l-info"
                 }`}
@@ -266,12 +279,12 @@ export default function Conversation() {
                   <div className="flex items-center gap-3">
                     <div
                       className={`flex h-10 w-10 items-center justify-center rounded-full ${
-                        message.direction === "sent"
+                        message.type === "sent"
                           ? "bg-primary/10 text-primary"
                           : "bg-info/10 text-info"
                       }`}
                     >
-                      {message.direction === "sent" ? (
+                      {message.type === "sent" ? (
                         <Send className="h-4 w-4" />
                       ) : (
                         <Mail className="h-4 w-4" />
@@ -279,7 +292,7 @@ export default function Conversation() {
                     </div>
                     <div>
                       <p className="font-medium">
-                        {message.direction === "sent" ? "You" : displayConversation.recipient_name}
+                        {message.type === "sent" ? "You" : displayConversation.lead.recipient_name}
                       </p>
                       <p className="text-xs text-muted-foreground">
                         {message.from} → {message.to}
