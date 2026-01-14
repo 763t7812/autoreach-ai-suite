@@ -7,6 +7,7 @@ import Landing from "./pages/Landing";
 import Callback from "./pages/Callback";
 import Dashboard from "./pages/Dashboard";
 import BatchesList from "./pages/BatchesList";
+import BatchDetails from "./pages/BatchDetails";
 import SheetsImport from "./pages/SheetsImport";
 import CsvUpload from "./pages/CsvUpload";
 import SingleAnalysis from "./pages/SingleAnalysis";
@@ -35,6 +36,7 @@ function App() {
             <Route path="/dashboard" element={<Dashboard />} />
             <Route path="/analyze" element={<SingleAnalysis />} />
             <Route path="/batches" element={<BatchesList />} />
+            <Route path="/batches/:batchId" element={<BatchDetails />} />
             <Route path="/batches/sheets" element={<SheetsImport />} />
             <Route path="/batches/upload" element={<CsvUpload />} />
             <Route path="/conversation/:emailId" element={<Conversation />} />
