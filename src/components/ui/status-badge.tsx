@@ -1,6 +1,6 @@
 import { cn } from "@/lib/utils";
 
-type Status = "sent" | "failed" | "replied" | "pending" | "processing" | "ready" | "completed";
+type Status = "sent" | "failed" | "replied" | "pending" | "processing" | "ready" | "completed" | "draft" | "paused" | "sending";
 
 interface StatusBadgeProps {
   status: Status;
@@ -35,6 +35,18 @@ const statusConfig: Record<Status, { label: string; className: string }> = {
   completed: {
     label: "Completed",
     className: "bg-success/10 text-success border-success/20",
+  },
+  draft: {
+    label: "Draft",
+    className: "bg-muted text-muted-foreground border-muted-foreground/20",
+  },
+  paused: {
+    label: "Paused",
+    className: "bg-warning/10 text-warning border-warning/20",
+  },
+  sending: {
+    label: "Sending",
+    className: "bg-info/10 text-info border-info/20 animate-pulse-subtle",
   },
 };
 
